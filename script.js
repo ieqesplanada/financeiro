@@ -307,20 +307,28 @@ async function apiDeleteSeguro(sheet, id) {
   function prevMonthKey(mk){ const[y,m]=mk.split('-').map(Number); return monthKeyFromDate(new Date(y,m-2,1)); }
 
 function getSegundoDomingoDoMes(mk){
-    const[y,m]=mk.split('-').map(Number);
-    
+    if (!mk || typeof mk !== 'string' || !mk.includes('-')) {
+        console.error('getSegundoDomingoDoMes: parâmetro inválido:', mk);
+        return null;
+    }
+
+    const [y, m] = mk.split('-').map(Number);
+    if (isNaN(y) || isNaN(m)) {
+        console.error('getSegundoDomingoDoMes: ano/mês inválidos:', {mk, y, m});
+        return null;
+    }
+
     let primeiroDom = null;
-    for(let d=1;d<=7;d++){
-        if(new Date(y,m-1,d).getDay()===0){
+    for (let d = 1; d <= 7; d++) {
+        if (new Date(y, m - 1, d).getDay() === 0) {
             primeiroDom = d;
             break;
         }
     }
-    
+
     const segundo = primeiroDom + 7;
     const resultado = `${y}-${String(m).padStart(2,'0')}-${String(segundo).padStart(2,'0')}`;
-    
-   
+
     console.log('getSegundoDomingoDoMes:', {mk, y, m, primeiroDom, segundo, resultado});
     return resultado;
 }
