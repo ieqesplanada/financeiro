@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IEQ Esplanada — Sistema Financeiro - Desenvolvido por: Danilo Falcão</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="min-h-screen">
+
+<!-- TELA DE LOGIN -->
+<div id="loginScreen" class="active">
+  <div class="login-card">
+    <div class="login-header">
+      <div class="login-logo-wrap" id="loginLogoWrap">
+        <i class="fas fa-church text-white text-2xl" id="loginLogoIcon"></i>
+        <img id="loginLogoImg" src="" alt="Logo">
+      </div>
+      <h1 class="text-white font-bold text-xl" id="loginNomeIgreja">IEQ Esplanada</h1>
+      <p class="text-blue-200 text-sm mt-1">Sistema Financeiro</p>
+    </div>
+
+    <div class="login-body">
+      <h2 class="text-gray-800 font-bold text-lg mb-1">Entrar</h2>
+      <p class="text-gray-500 text-sm mb-5">Informe suas credenciais de acesso</p>
+
+      <div class="login-erro" id="loginErro">
+        <i class="fas fa-exclamation-circle mr-2 flex-shrink-0"></i>
+        <span id="loginErroMsg">Usuário ou senha incorretos.</span>
+      </div>
+
+      <form id="formLogin" onsubmit="efetuarLogin(event)">
+        <div class="login-input-wrap">
+          <i class="fas fa-user"></i>
+          <input type="text" id="loginUser" class="login-input"
+                 placeholder="Usuário" autocomplete="username" required>
+        </div>
+
+        <div class="login-input-wrap" style="margin-bottom:8px">
+          <i class="fas fa-lock"></i>
+          <input type="password" id="loginPass" class="login-input"
+                 placeholder="Senha" autocomplete="current-password" required>
+          <button type="button" class="show-pass-btn" id="togglePass"
+                  onclick="toggleSenha()" title="Mostrar/ocultar senha">
+            <i class="fas fa-eye" id="togglePassIcon"></i>
+          </button>
+        </div>
+
+        <label class="flex items-center gap-2 text-sm text-gray-600 mb-5 cursor-pointer select-none">
+          <input type="checkbox" id="lembrarUser" class="rounded">
+          Lembrar usuário
+        </label>
+
+        <button type="submit" class="btn-login" id="btnLogin">
+          <i class="fas fa-sign-in-alt mr-2"></i> Entrar
+        </button>
+      </form>
+
+      <p class="text-center text-xs text-gray-400 mt-5">
+        <i class="fas fa-shield-alt mr-1"></i>
+        Acesso restrito a usuários autorizados
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- SISTEMA PRINCIPAL -->
+<div id="appRoot" style="display:none">
+
+<div id="loadingOverlay">
+  <div class="spinner"></div>
+  <p class="text-lg font-bold">Carregando dados...</p>
+  <p class="text-sm text-blue-200 mt-1">Sincronizando com Google Sheets</p>
+</div>
+
+<div id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<aside class="sidebar w-64 flex flex-col" id="sidebar">
+  <div class="p-5 border-b border-blue-800">
+    <div class="flex items-center gap-3">
+      <div id="sidebarLogoWrap">
+        <div id="sidebarLogoDefault">
+          <i class="fas fa-church text-white text-sm"></i>
+        </div>
+        <img id="sidebarLogoImg" src="" alt="Logo da Igreja">
+      </div>
+      <div class="flex-1 min-w-0">
+        <h1 class="text-white font-bold text-sm leading-tight truncate" id="sidebarNomeIgreja">IEQ Esplanada</h1>
+        <p class="text-blue-300 text-xs">Sistema Financeiro</p>
+      </div>
+      <button onclick="toggleSidebar()" class="ml-auto text-blue-300 hover:text-white lg:hidden flex-shrink-0">
+        <i class="fas fa-times text-lg"></i>
+      </button>
+    </div>
+  </div>
+
+  <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
+    <button onclick="showPage('dashboard')" class="nav-item active w-full flex items-center gap-3 px-4 py-3 rounded-lg text-blue-100 text-sm" id="nav-dashboard"><i class="fas fa-chart-pie w-4"></i> Dashboard</button>
+    <button onclick="showPage('culto')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-blue-100 text-sm" id="nav-culto"><i class="fas fa-bible w-4"></i> Relatório de Culto</button>
+    <button onclick="showPage('entradas')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-blue-100 text-sm" id="nav-entradas"><i class="fas fa-arrow-down w-4"></i> Entradas</button>
+    <button onclick="showPage('despesas')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-blue-100 text-sm" id="nav-despesas"><i class="fas fa-arrow-up w-4"></i> Despesas</button>
+    <button onclick="showPage('distribuicoes')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-blue-100 text-sm" id="nav-distribuicoes"><i class="fas fa-share-alt w-4"></i> Distribuições</button>
+    <button onclick="showPage('relatorios')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-blue-100 text-sm" id="nav-relatorios"><i class="fas fa-file-alt w-4"></i> Relatórios</button>
+    <button onclick="showPage('historico')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-blue-100 text-sm" id="nav-historico"><i class="fas fa-history w-4"></i> Histórico</button>
+    <button onclick="showPage('configuracoes')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-blue-100 text-sm" id="nav-configuracoes"><i class="fas fa-cog w-4"></i> Configurações</button>
+  </nav>
+
+  <div class="p-4 border-t border-blue-800">
+    <div class="flex items-center gap-3 mb-2">
+      <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+        <i class="fas fa-user text-white text-xs"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-white text-xs font-semibold truncate" id="sidebarUserNome">—</p>
+        <div id="sidebarUserPerm"></div>
+      </div>
+    </div>
+    <button onclick="logout()" class="btn-logout">
+      <i class="fas fa-sign-out-alt"></i> Sair do sistema
+    </button>
+  </div>
+</aside>
+
+<main class="min-h-screen flex flex-col" id="mainContent">
+  <header class="bg-white shadow-sm sticky top-0 z-40 px-4 py-3">
+    <div class="flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <button id="menuToggle" onclick="toggleSidebar()" class="text-gray-500 hover:text-gray-700 p-1">
+          <i class="fas fa-bars text-xl"></i>
+        </button>
+        <div>
+          <h2 class="text-gray-800 font-bold text-base leading-tight" id="pageTitle">Dashboard</h2>
+          <p class="text-gray-500 text-xs hidden sm:block" id="pageSubtitle">Visão geral financeira</p>
+        </div>
+      </div>
+
+      <!-- SELETOR DE MÊS GLOBAL -->
+      <div class="flex items-center gap-2">
+        <label class="text-xs text-gray-500 font-medium hidden sm:block">
+          <i class="fas fa-calendar-alt mr-1"></i>Mês:
+        </label>
+        <select id="globalMonthSelector"
+                onchange="changeGlobalMonth()"
+                class="input-field text-sm font-semibold text-gray-700 sm:w-40 w-32 py-1.5 px-2 cursor-pointer border-blue-200 bg-blue-50 focus:bg-white">
+        </select>
+      </div>
+      <!-- FIM SELETOR DE MÊS GLOBAL -->
+
+      <div class="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+        <button onclick="sincronizarTudo(false)" title="Sincronizar agora"
+        class="relative p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition text-sm"
+        id="btnSync">
+          <i class="fas fa-sync-alt"></i>
+          <span id="syncBadge" style="display:none"
+                class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs
+                       font-bold rounded-full flex items-center justify-center leading-none">0</span>
+        </button>
+
+        <div class="hidden md:flex flex-col items-end" id="syncStatus">
+          <div class="flex items-center gap-1.5">
+            <div class="w-2 h-2 bg-green-400 rounded-full sync-pulse"></div>
+            <span class="text-gray-600 text-xs">Sincronizado</span>
+          </div>
+          <span class="text-gray-400 text-xs" id="ultimaSyncLabel">—</span>
+        </div>
+      </div>
+    </div>
+  </header>
+    <!-- DASHBOARD -->
+   <div class="page active" id="page-dashboard">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <!-- Saldo Anterior -->
+        <div class="card p-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-gray-500 text-xs font-medium">Saldo Transferido</span>
+            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center"><i class="fas fa-arrow-right text-blue-600 text-xs"></i></div>
+          </div>
+          <p class="text-lg sm:text-2xl font-bold text-blue-600" id="kpi-saldo-ant">R$ 0,00</p>
+          <p class="text-xs text-blue-400 mt-1" id="kpi-saldo-ant-sub">—</p>
+        </div>
+        <!-- Total Entradas -->
+        <div class="card p-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-gray-500 text-xs font-medium">Total Entradas</span>
+            <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center"><i class="fas fa-arrow-down text-green-600 text-xs"></i></div>
+          </div>
+          <p class="text-lg sm:text-2xl font-bold text-green-600" id="kpi-entradas">R$ 0,00</p>
+          <p class="text-xs text-green-500 mt-1" id="kpi-entradas-var">—</p>
+        </div>
+        <!-- Total Saídas -->
+        <div class="card p-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-gray-500 text-xs font-medium">Total Saídas</span>
+            <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center"><i class="fas fa-arrow-up text-red-600 text-xs"></i></div>
+          </div>
+          <p class="text-lg sm:text-2xl font-bold text-red-600" id="kpi-saidas">R$ 0,00</p>
+          <p class="text-xs text-red-500 mt-1" id="kpi-saidas-var">—</p>
+        </div>
+        <!-- Saldo Final -->
+        <div class="card p-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-gray-500 text-xs font-medium">Saldo Final</span>
+            <div class="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center"><i class="fas fa-coins text-yellow-600 text-xs"></i></div>
+          </div>
+          <p class="text-lg sm:text-2xl font-bold text-yellow-600" id="kpi-saldo">R$ 0,00</p>
+          <p class="text-xs text-gray-500 mt-1" id="kpi-saldo-sub">—</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <div class="card p-4">
+          <h3 class="font-bold text-gray-800 mb-3 flex items-center gap-2 text-sm"><i class="fas fa-chart-line text-blue-600"></i> Evolução Financeira 2026</h3>
+          <canvas id="chartEvolucao"></canvas>
+        </div>
+        <div class="card p-4">
+          <h3 class="font-bold text-gray-800 mb-3 flex items-center gap-2 text-sm"><i class="fas fa-chart-pie text-yellow-600"></i> Despesas por Categoria (mês)</h3>
+          <canvas id="chartDespesas"></canvas>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+        <div class="card p-4 lg:col-span-2">
+          <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2 text-sm"><i class="fas fa-share-alt text-purple-600"></i> Distribuições do Mês</h3>
+          <div class="space-y-3" id="dashDistribuicoes"></div>
+        </div>
+        <div class="card p-4">
+          <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2 text-sm"><i class="fas fa-users text-teal-600"></i> Métricas de Culto (mês)</h3>
+          <div class="space-y-3">
+            <div class="text-center p-3 bg-blue-50 rounded-xl">
+    <p class="text-3xl font-bold text-blue-600" id="kpi-presentes">0</p>
+    <p class="text-sm text-gray-600 mt-1">Presentes na Ceia</p>
+    <p class="text-xs text-red-500 mt-1 font-mono" id="debug-data-ceia" style="display:none;background:#fee2e2;padding:4px 8px;border-radius:4px;"></p>
+    <p class="text-xs text-gray-500 mt-1 font-mono" id="kpi-presentes-info"></p>
+</div>
+<div class="grid grid-cols-2 gap-2">
+              <div class="text-center p-2 bg-green-50 rounded-lg">
+                <p class="text-xl font-bold text-green-600" id="kpi-cultos">0</p>
+                <p class="text-xs text-gray-600">Cultos no mês</p>
+              </div>
+              <div class="text-center p-2 bg-yellow-50 rounded-lg">
+                <p class="text-xl font-bold text-yellow-600" id="kpi-media-pessoa">R$ 0,00</p>
+                <p class="text-xs text-gray-600">Média/Pessoa</p>
+              </div>
+            </div>
+            <div class="text-center p-3 bg-teal-50 rounded-xl border border-teal-200">
+              <p class="text-2xl font-bold text-teal-600" id="kpi-missoes-mes">R$ 0,00</p>
+              <p class="text-sm text-gray-600 mt-1">Oferta de Missões (mês)</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card p-4">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-bold text-gray-800 flex items-center gap-2 text-sm"><i class="fas fa-list text-gray-600"></i> Últimas Movimentações</h3>
+          <button class="text-blue-600 text-sm font-medium hover:underline" onclick="showPage('despesas')">Ver saídas</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full" style="min-width:520px">
+            <thead><tr class="text-left text-xs text-gray-500 border-b">
+              <th class="pb-2 font-semibold">Data</th>
+              <th class="pb-2 font-semibold">Descrição</th>
+              <th class="pb-2 font-semibold">Tipo</th>
+              <th class="pb-2 font-semibold text-right">Valor</th>
+            </tr></thead>
+            <tbody id="tabelaMovimentacoes"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- RELATÓRIO DE CULTO -->
+    <div class="page" id="page-culto">
+      <div class="card p-4 mb-4">
+        <div class="flex flex-col sm:flex-row gap-3">
+          <div class="flex items-center gap-2 flex-1"><i class="fas fa-search text-gray-400"></i><input type="text" id="buscaCulto" placeholder="Buscar culto..." class="input-field text-sm" oninput="renderCultos()"></div>
+          <div class="flex gap-2">
+            <input type="month" id="filtroCultoMes" class="input-field text-sm flex-1" onchange="renderCultos()">
+            <button class="btn-primary flex items-center gap-2 text-sm whitespace-nowrap" id="btnNovoCulto" onclick="openNovoCulto()">
+              <i class="fas fa-plus"></i><span class="hidden sm:inline">Novo Culto</span><span class="sm:hidden">Novo</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="card p-4 mb-4">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-bold text-gray-800 text-sm">Cultos Registrados</h3>
+          <span class="text-sm text-gray-500" id="qtdCultosLabel">0 cultos</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full" style="min-width:720px">
+            <thead><tr class="text-left text-xs text-gray-500 border-b bg-gray-50">
+              <th class="p-2 font-semibold">Data</th>
+              <th class="p-2 font-semibold">Tipo</th>
+              <th class="p-2 font-semibold hidden md:table-cell">Pregador</th>
+              <th class="p-2 font-semibold text-center">Pres.</th>
+              <th class="p-2 font-semibold">Dízimos</th>
+              <th class="p-2 font-semibold">Ofertas</th>
+              <th class="p-2 font-semibold">Total</th>
+              <th class="p-2 font-semibold">Ações</th>
+            </tr></thead>
+            <tbody id="tabelaCultos"><tr><td colspan="8" class="py-8 text-center text-gray-400"><i class="fas fa-bible text-4xl mb-3 block text-gray-300"></i>Nenhum culto registrado ainda</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- CORREÇÃO 1: "Total Geral" não inclui Missões (Missões é separado) -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="card p-4 text-center border-t-4 border-blue-500"><p class="text-xl font-bold text-blue-600" id="tot-dizimos">R$ 0,00</p><p class="text-xs text-gray-500 mt-1">Total Dízimos</p></div>
+        <div class="card p-4 text-center border-t-4 border-green-500"><p class="text-xl font-bold text-green-600" id="tot-ofertas">R$ 0,00</p><p class="text-xs text-gray-500 mt-1">Total Ofertas</p></div>
+        <div class="card p-4 text-center border-t-4 border-yellow-500"><p class="text-xl font-bold text-yellow-600" id="tot-missoes">R$ 0,00</p><p class="text-xs text-gray-500 mt-1">Missões (acumulado)</p></div>
+        <div class="card p-4 text-center border-t-4 border-purple-500"><p class="text-xl font-bold text-purple-600" id="tot-cultos-total">R$ 0,00</p><p class="text-xs text-gray-500 mt-1">Total Dízimos+Ofertas</p></div>
+      </div>
+    </div>
+
+    <!-- ENTRADAS -->
+    <div class="page" id="page-entradas">
+    <div class="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <p class="text-gray-500 text-sm">Gerencie todas as entradas financeiras do mês</p>
+        <button class="btn-primary flex items-center gap-2 w-full sm:w-auto justify-center" id="btnNovaEntrada" onclick="openModal('modalNovaEntrada')">
+            <i class="fas fa-plus"></i> Nova Entrada
+        </button>
+    </div>
+      
+      <div class="card p-4 mb-4">
+        <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+          <div class="flex items-center gap-2"><i class="fas fa-calendar text-gray-400"></i><label class="text-sm text-gray-600 font-medium whitespace-nowrap">Filtrar por Mês:</label></div>
+          <input type="month" id="filtroEntradaMes" class="input-field text-sm sm:w-48" onchange="renderEntradas()">
+          <button class="btn-secondary text-sm" onclick="limparFiltroEntradas()"><i class="fas fa-times mr-1"></i> Todos</button>
+          <span class="text-sm text-gray-500 flex items-center sm:ml-auto">Total: <strong class="ml-1 text-green-600" id="totalEntradasFiltro">R$ 0,00</strong></span>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+        <div class="card p-4 border-l-4 border-green-500"><p class="text-xs text-gray-500">Entradas do Mês</p><p class="text-xl font-bold text-green-600" id="kpiEntradasMes">R$ 0,00</p></div>
+        <div class="card p-4 border-l-4 border-blue-500"><p class="text-xs text-gray-500">Saldo (no mês)</p><p class="text-xl font-bold text-blue-600" id="kpiEntradasSaldoMes">R$ 0,00</p></div>
+        <div class="card p-4 border-l-4 border-purple-500"><p class="text-xs text-gray-500">Total Registros</p><p class="text-xl font-bold text-purple-600" id="kpiQtdEntradas">0</p></div>
+      </div>
+      <div class="card p-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
+          <h3 class="font-bold text-gray-800 text-sm">Registro de Entradas</h3>
+          <input type="text" id="buscaEntrada" placeholder="Buscar descrição..." class="input-field text-sm sm:w-48" oninput="renderEntradas()">
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full" style="min-width:450px">
+            <thead><tr class="text-left text-xs text-gray-500 border-b">
+              <th class="pb-2 font-semibold">Data</th>
+              <th class="pb-2 font-semibold">Descrição</th>
+              <th class="pb-2 font-semibold hidden sm:table-cell">Origem</th>
+              <th class="pb-2 font-semibold text-right">Valor</th>
+              <th class="pb-2 font-semibold">Ações</th>
+            </tr></thead>
+            <tbody id="tabelaEntradas"><tr><td colspan="5" class="py-8 text-center text-gray-400 text-sm">Registre cultos para ver as entradas automaticamente</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+       <!-- DESPESAS -->
+<div class="page" id="page-despesas">
+  <div class="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <p class="text-gray-500 text-sm">Gerencie todas as saídas financeiras do mês</p>
+    <button class="btn-primary flex items-center gap-2 w-full sm:w-auto justify-center"
+            id="btnNovaDespesa" onclick="abrirNovaDespesa()">
+      <i class="fas fa-plus"></i> Nova Despesa
+    </button>
+  </div>
+
+  <!-- FILTROS -->
+  <div class="card p-4 mb-4">
+    <div class="flex flex-col sm:flex-row flex-wrap gap-3 items-stretch sm:items-center">
+      <div class="flex items-center gap-2">
+        <i class="fas fa-calendar text-gray-400 text-sm"></i>
+        <label class="text-sm text-gray-600 font-medium whitespace-nowrap">Mês:</label>
+      </div>
+      <input type="month" id="filtroDespesaMes" class="input-field text-sm sm:w-44"
+             onchange="filtrarDespesas()">
+      <select class="input-field text-sm sm:w-48" id="filtroCat" onchange="filtrarDespesas()">
+        <option value="">Todas as categorias</option>
+      </select>
+      <button class="btn-secondary text-sm" onclick="limparFiltrosDespesas()">
+        <i class="fas fa-times mr-1"></i> Todos
+      </button>
+      <span class="text-sm text-gray-500 flex items-center sm:ml-auto">
+        Total filtrado: <strong class="ml-1 text-red-600" id="totalDespesasFiltro">R$ 0,00</strong>
+      </span>
+    </div>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+    <div class="card p-4 border-l-4 border-red-500">
+      <p class="text-xs text-gray-500">Despesas do Mês</p>
+      <p class="text-xl font-bold text-red-600" id="kpiDespesasMes">R$ 0,00</p>
+    </div>
+    <div class="card p-4 border-l-4 border-orange-500">
+      <p class="text-xs text-gray-500">Saldo (Entradas − Saídas)</p>
+      <p class="text-xl font-bold text-orange-600" id="kpiDespesasSaldoMes">R$ 0,00</p>
+    </div>
+    <div class="card p-4 border-l-4 border-purple-500">
+      <p class="text-xs text-gray-500">Total Registros</p>
+      <p class="text-xl font-bold text-purple-600" id="kpiQtdDespesas">0</p>
+    </div>
+  </div>
+
+  <!-- CATEGORIAS -->
+  <div class="card p-4 mb-4" id="cardCategoriasDespesas">
+    <div class="flex items-center justify-between mb-3">
+      <h4 class="font-semibold text-gray-700 text-sm flex items-center gap-2">
+        <i class="fas fa-tags text-orange-500"></i> Categorias
+        <span class="text-xs text-gray-400 font-normal" id="contadorCategorias">0 categoria(s)</span>
+      </h4>
+      <div class="flex items-center gap-2">
+        <button onclick="abrirNovaCategoria()"
+                class="text-xs bg-orange-50 text-orange-600 hover:bg-orange-100 px-2 py-1 rounded-lg font-medium transition">
+          <i class="fas fa-plus mr-1"></i> Nova
+        </button>
+        <button onclick="toggleCategoriasDespesas()"
+                class="text-gray-400 hover:text-gray-600 p-1 transition">
+          <i class="fas fa-chevron-down text-sm" id="iconeToggleCategorias"></i>
+        </button>
+      </div>
+    </div>
+    <div id="categoriasDespesasBody"
+         style="max-height:500px;overflow:hidden;transition:all 0.3s ease">
+      <div id="listaCategoriasDespesas" class="flex flex-wrap gap-2"></div>
+    </div>
+  </div>
+
+  <!-- TABELA -->
+  <div class="card p-4">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
+      <h3 class="font-bold text-gray-800 text-sm">Registro de Despesas</h3>
+      <input type="text" id="buscaDespesa" placeholder="Buscar descrição..."
+             class="input-field text-sm sm:w-48" oninput="filtrarDespesas()">
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full" style="min-width:650px">
+        <thead>
+          <tr class="text-left text-xs text-gray-500 border-b">
+            <th class="pb-2 font-semibold">Categoria</th>
+            <th class="pb-2 font-semibold">Descrição</th>
+            <th class="pb-2 font-semibold">Data</th>
+            <th class="pb-2 font-semibold text-right">Valor</th>
+            <th class="pb-2 font-semibold">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tabelaDespesas">
+          <tr><td colspan="5" class="py-8 text-center text-gray-400 text-sm">Nenhuma despesa registrada</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- DISTRIBUIÇÕES -->
+<div class="page" id="page-distribuicoes">
+  <div class="card p-4 mb-4">
+    <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+      <div class="flex items-center gap-2"><i class="fas fa-calendar text-gray-400"></i><label class="text-sm text-gray-600 font-medium whitespace-nowrap">Mês:</label></div>
+      <input type="month" id="filtroDistMes" class="input-field text-sm sm:w-48" onchange="renderDistribuicoesMes()">
+      <span class="text-sm text-gray-500 sm:ml-auto">Cálculo baseado em Dízimos e Ofertas de Missões</span>
+    </div>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="listaDistribuicoes"></div>
+</div>
+
+<!-- RELATÓRIOS -->
+<div class="page" id="page-relatorios">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="card p-5">
+      <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-file-pdf text-red-500"></i> Relatório Financeiro Mensal</h3>
+      <p class="text-sm text-gray-500 mb-5">Gera um documento PDF com o resumo de entradas, saídas e detalhamento de despesas do mês selecionado.</p>
+      <div class="flex flex-col sm:flex-row gap-3">
+        <select id="relatorioMesSelect" class="input-field text-sm flex-1"></select>
+        <button onclick="gerarRelatorio()" class="btn-primary flex items-center justify-center gap-2"><i class="fas fa-download"></i> Gerar PDF</button>
+      </div>
+    </div>
+    
+    <div class="card p-5">
+      <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-users text-blue-500"></i> Relatório de Dizimistas</h3>
+      <p class="text-sm text-gray-500 mb-5">Lista nominal de todos os dizimistas que contribuíram no mês selecionado, com datas e valores.</p>
+      <div class="flex flex-col sm:flex-row gap-3">
+        <select id="relDizimistasMesSelect" class="input-field text-sm flex-1"></select>
+        <div class="flex gap-2">
+          <button onclick="gerarRelatorioDizimistas()" class="btn-primary flex-1 flex items-center justify-center gap-2"><i class="fas fa-eye"></i> Ver</button>
+          <button onclick="compartilharDizimistasWhatsApp()" class="btn-whatsapp flex-1 flex items-center justify-center gap-2"><i class="fab fa-whatsapp"></i> Zap</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card p-5">
+      <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-wallet text-green-500"></i> Forma de Contribuição</h3>
+      <p class="text-sm text-gray-500 mb-5">Resumo comparativo entre entradas via Caixa (dinheiro) e Conta Bancária (PIX/Transferência).</p>
+      <div class="flex flex-col sm:flex-row gap-3">
+        <select id="relFormasMesSelect" class="input-field text-sm flex-1"></select>
+        <div class="flex gap-2">
+          <button onclick="gerarRelatorioFormasContribuicao()" class="btn-primary flex-1 flex items-center justify-center gap-2"><i class="fas fa-eye"></i> Ver</button>
+          <button onclick="compartilharFormasWhatsApp()" class="btn-whatsapp flex-1 flex items-center justify-center gap-2"><i class="fab fa-whatsapp"></i> Zap</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card p-5">
+      <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-chart-line text-purple-500"></i> Comparativo Anual</h3>
+      <p class="text-sm text-gray-500 mb-3">Evolução do saldo final ao longo dos meses de 2026.</p>
+      <canvas id="chartComparativo" height="100"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- HISTÓRICO -->
+<div class="page" id="page-historico">
+  <div class="card p-4 mb-4 bg-blue-900 text-white border-none">
+    <h3 class="font-bold text-lg mb-1">Dados Históricos 2026</h3>
+    <p class="text-blue-200 text-xs">Informações consolidadas dos meses anteriores</p>
+  </div>
+  <div class="overflow-x-auto card p-0">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 text-gray-500 text-xs uppercase"><tr class="text-left border-b">
+        <th class="p-4 font-semibold">Mês</th>
+        <th class="p-4 font-semibold">Saldo Ant.</th>
+        <th class="p-4 font-semibold text-green-600">Entradas</th>
+        <th class="p-4 font-semibold text-red-600">Saídas</th>
+        <th class="p-4 font-semibold">Saldo Final</th>
+        <th class="p-4 font-semibold text-center">Ceia</th>
+      </tr></thead>
+      <tbody id="tabelaHistorico"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- CONFIGURAÇÕES -->
+<div class="page" id="page-configuracoes">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="card p-5">
+      <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-church text-blue-600"></i> Dados da Igreja</h3>
+      <div class="space-y-4">
+        <div><label class="text-xs text-gray-500 font-bold mb-1 block uppercase">Nome da Igreja</label><input type="text" id="cfg-nome-igreja" class="input-field text-sm" placeholder="Ex: IEQ Esplanada"></div>
+        <div><label class="text-xs text-gray-500 font-bold mb-1 block uppercase">Endereço</label><input type="text" id="cfg-endereco" class="input-field text-sm" placeholder="Rua, Número, Bairro, Cidade"></div>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="text-xs text-gray-500 font-bold mb-1 block uppercase">Pastor Titular</label><input type="text" id="cfg-pastor" class="input-field text-sm"></div>
+          <div><label class="text-xs text-gray-500 font-bold mb-1 block uppercase">Tesoureiro</label><input type="text" id="cfg-tesoureiro" class="input-field text-sm"></div>
+        </div>
+        <div><label class="text-xs text-gray-500 font-bold mb-1 block uppercase">WhatsApp (para relatórios)</label><input type="text" id="cfg-whatsapp" class="input-field text-sm" placeholder="5511999999999"></div>
+        <button onclick="salvarConfiguracoes()" class="btn-primary w-full"><i class="fas fa-save mr-2"></i> Salvar Dados</button>
+      </div>
+    </div>
+
+    <div class="card p-5">
+      <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-image text-yellow-600"></i> Logo do Sistema</h3>
+      <div class="flex flex-col sm:flex-row gap-5 items-center mb-5">
+        <div class="logo-preview-box" id="logoPreviewWrap">
+          <i class="fas fa-church text-gray-300 text-3xl" id="logoPreviewIcon"></i>
+          <img id="logoPreviewImg" src="" alt="Preview">
+        </div>
+        <div class="flex-1 text-center sm:text-left">
+          <p class="text-sm font-bold text-gray-700 mb-1" id="logoPreviewLabel">Nenhuma logo configurada</p>
+          <p class="text-xs text-gray-400 mb-3">Recomendado: PNG ou JPG quadrado, fundo branco ou transparente.</p>
+          <div class="flex gap-2 justify-center sm:justify-start">
+            <button onclick="document.getElementById('logoFileInput').click()" class="btn-secondary text-xs"><i class="fas fa-upload mr-1"></i> Escolher</button>
+            <button id="btnRemoverLogo" onclick="removerLogo()" class="btn-danger text-xs" style="display:none"><i class="fas fa-trash mr-1"></i> Remover</button>
+          </div>
+          <input type="file" id="logoFileInput" class="hidden" accept="image/*" onchange="handleLogoUpload(event)">
+        </div>
+      </div>
+      <div class="logo-upload-area" ondragover="event.preventDefault()" ondrop="handleLogoDrop(event)" onclick="document.getElementById('logoFileInput').click()">
+        <i class="fas fa-cloud-upload-alt text-orange-400 text-3xl mb-2"></i>
+        <p class="text-sm text-gray-600 font-medium">Arraste a logo aqui ou clique para buscar</p>
+      </div>
+      <button onclick="salvarLogo()" class="btn-primary w-full mt-5"><i class="fas fa-check mr-2"></i> Aplicar Nova Logo</button>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- MODAIS -->
+
+<!-- Modal Novo Culto -->
+<div class="modal-overlay" id="modalNovoCulto">
+  <div class="card w-full max-w-4xl max-h-[90vh] overflow-y-auto m-4 p-0">
+    <div class="bg-blue-900 text-white p-4 sticky top-0 z-50 flex items-center justify-between">
+      <h3 class="font-bold flex items-center gap-2" id="cultoModalTitulo"><i class="fas fa-bible"></i> Novo Relatório de Culto (REFC)</h3>
+      <button onclick="closeModal('modalNovoCulto')" class="text-white hover:opacity-70"><i class="fas fa-times text-xl"></i></button>
+    </div>
+    <form id="formCulto" onsubmit="salvarCulto(event)" class="p-4 sm:p-6">
+      <input type="hidden" id="c-id">
+      
+      <!-- Seção 1: Dados Gerais -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
+        <div><label class="text-xs text-gray-500 font-bold mb-1 block uppercase">Data do Culto</label><input type="date" id="c-data" class="input-field text-sm" required></div>
+        <div><label class="text-xs text-gray-500 font-bold mb-1 block uppercase">Horário</label><input type="time" id="c-horario" class="input-field text-sm" value="19:30"></div>
+        <div><label class="text-xs text-gray-500 font-bold mb-1 block uppercase">Tipo de Culto</label>
+          <select id="c-tipo" class="input-field text-sm">
+            <option>Culto Regular</option><option>Culto de Ceia</option><option>Culto de Mulheres</option><option>Culto de Jovens</option><option>Culto de Crianças</option><option>Culto de Oração</option><option>Culto de Missões</option><option>Outros</option>
+          </select>
+        </div>
+        <div><label class="text-xs text-gray-500 font-bold mb-1 block uppercase">Pregador</label><input type="text" id="c-pregador" class="input-field text-sm" placeholder="Nome do pregador"></div>
+        <div><label class="text-xs text-gray-500 font-bold mb-1 block uppercase">Pastor Responsável</label><input type="text" id="c-pastor" class="input-field text-sm"></div>
+        <div><label class="text-xs text-gray-500 font-bold mb-1 block uppercase">Curados/Batizados</label><input type="number" id="c-cura" class="input-field text-sm" value="0"></div>
+      </div>
+
+      <!-- Seção 2: Métricas de Público -->
+      <div class="grid grid-cols-3 gap-3 mb-6">
+        <div class="text-center p-3 bg-blue-50 rounded-xl border border-blue-100"><label class="text-[10px] text-blue-600 font-bold uppercase block mb-1">Presentes</label><input type="number" id="c-presentes" class="w-full bg-transparent text-center text-xl font-bold text-blue-900 outline-none" value="0"></div>
+        <div class="text-center p-3 bg-teal-50 rounded-xl border border-teal-100"><label class="text-[10px] text-teal-600 font-bold uppercase block mb-1">Visitantes</label><input type="number" id="c-visitantes" class="w-full bg-transparent text-center text-xl font-bold text-teal-900 outline-none" value="0"></div>
+        <div class="text-center p-3 bg-purple-50 rounded-xl border border-purple-100"><label class="text-[10px] text-purple-600 font-bold uppercase block mb-1">Crianças</label><input type="number" id="c-criancas" class="w-full bg-transparent text-center text-xl font-bold text-purple-900 outline-none" value="0"></div>
+      </div>
+
+      <!-- Seção 3: Dízimos -->
+      <div class="mb-6">
+        <div class="flex items-center justify-between mb-3"><h4 class="font-bold text-gray-700 flex items-center gap-2"><i class="fas fa-hand-holding-heart text-blue-600"></i> Dízimos Recebidos</h4><span class="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded" id="totalDizimosLabel">R$ 0,00</span></div>
+        <div id="listaDizimistas"></div>
+        <button type="button" class="btn-add-row" onclick="adicionarDizimista()"><i class="fas fa-plus mr-1"></i> Adicionar Dizimista</button>
+      </div>
+
+      <!-- Seção 4: Ofertas e Especiais -->
+      <div class="mb-6">
+        <div class="flex items-center justify-between mb-3"><h4 class="font-bold text-gray-700 flex items-center gap-2"><i class="fas fa-donate text-green-600"></i> Ofertas e Outras Entradas</h4><span class="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded" id="totalOfertasLabel">R$ 0,00</span></div>
+        <div id="listaOfertas"></div>
+        <button type="button" class="btn-add-row" onclick="adicionarOferta()"><i class="fas fa-plus mr-1"></i> Adicionar Oferta</button>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+          <div class="p-3 bg-orange-50 rounded-lg border border-orange-100"><label class="text-[10px] text-orange-600 font-bold uppercase block mb-1">Missões</label><input type="number" step="0.01" id="c-missoes" class="w-full bg-transparent text-lg font-bold text-orange-900 outline-none" value="0" oninput="calcTotalCulto()"></div>
+          <div class="p-3 bg-indigo-50 rounded-lg border border-indigo-100"><label class="text-[10px] text-indigo-600 font-bold uppercase block mb-1">Ofertas Especiais</label><input type="number" step="0.01" id="c-especiais" class="w-full bg-transparent text-lg font-bold text-indigo-900 outline-none" value="0" oninput="calcTotalCulto()"></div>
+          <div class="p-3 bg-gray-50 rounded-lg border border-gray-100"><label class="text-[10px] text-gray-600 font-bold uppercase block mb-1">Outras</label><input type="number" step="0.01" id="c-outras" class="w-full bg-transparent text-lg font-bold text-gray-900 outline-none" value="0" oninput="calcTotalCulto()"></div>
+        </div>
+      </div>
+
+      <!-- Seção 5: Resumo e Fechamento -->
+      <div class="bg-blue-900 text-white p-5 rounded-2xl mb-6 shadow-lg">
+        <div class="flex items-center justify-between mb-4 pb-4 border-b border-blue-800">
+          <span class="text-blue-200 font-medium">Total Arrecadado</span>
+          <span class="text-3xl font-black text-white" id="totalArrecadado">R$ 0,00</span>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="text-[10px] text-blue-300 font-bold uppercase block mb-1">Dinheiro (Caixa)</label><input type="number" step="0.01" id="c-caixa" class="w-full bg-blue-800 border border-blue-700 rounded-lg p-2 text-white font-bold outline-none input-auto" readonly></div>
+          <div><label class="text-[10px] text-blue-300 font-bold uppercase block mb-1">PIX (Conta Bancária)</label><input type="number" step="0.01" id="c-conta" class="w-full bg-blue-800 border border-blue-700 rounded-lg p-2 text-white font-bold outline-none input-auto-pix" readonly></div>
+        </div>
+      </div>
+
+      <!-- Seção 6: Observações -->
+      <div class="mb-6">
+        <label class="text-xs text-gray-500 font-bold mb-1 block uppercase">Observações do Culto</label>
+        <textarea id="c-observacoes" class="input-field text-sm h-24 resize-none" placeholder="Relate acontecimentos importantes, testemunhos, etc..."></textarea>
+      </div>
+
+      <div class="flex gap-3 sticky bottom-0 bg-white pt-4 border-t">
+        <button type="button" onclick="closeModal('modalNovoCulto')" class="btn-secondary flex-1">Cancelar</button>
+        <button type="submit" id="btnSalvarCulto" class="btn-primary flex-[2]"><i class="fas fa-save mr-2"></i> Salvar Relatório</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Nova Entrada -->
+<div class="modal-overlay" id="modalNovaEntrada">
+  <div class="card w-full max-w-md m-4 p-0">
+    <div class="bg-blue-900 text-white p-4 flex items-center justify-between rounded-t-xl">
+      <h3 class="font-bold flex items-center gap-2"><i class="fas fa-arrow-down"></i> Nova Entrada Manual</h3>
+      <button onclick="closeModal('modalNovaEntrada')" class="text-white hover:opacity-70"><i class="fas fa-times"></i></button>
+    </div>
+    <form onsubmit="salvarEntradaManual(event)" class="p-5 space-y-4">
+      <div><label class="text-xs text-gray-500 font-bold mb-1 block uppercase">Descrição</label><input type="text" id="e-desc" class="input-field text-sm" placeholder="Ex: Doação anônima" required></div>
+      <div><label class="text-xs text-gray-500 font-bold mb-1 block uppercase">Valor (R$)</label><input type="number" step="0.01" id="e-valor" class="input-field text-sm" placeholder="0,00" required></div>
+      <div><label class="text-xs text-gray-500 font-bold mb-1 block uppercase">Data</label><input type="date" id="e-data" class="input-field text-sm" required></div>
+      <div class="flex gap-3 pt-2">
+        <button type="button" onclick="closeModal('modalNovaEntrada')" class="btn-secondary flex-1">Cancelar</button>
+        <button type="submit" id="btnSalvarEntrada" class="btn-primary flex-1">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Nova Despesa -->
+<div class="modal-overlay" id="modalNovaDespesa">
+  <div class="card w-full max-w-md m-4 p-0">
+    <div class="bg-red-600 text-white p-4 flex items-center justify-between rounded-t-xl">
+      <h3 class="font-bold flex items-center gap-2"><i class="fas fa-arrow-up"></i> Nova Despesa</h3>
+      <button onclick="closeModal('modalNovaDespesa')" class="text-white hover:opacity-70"><i class="fas fa-times"></i></button>
+    </div>
+    <form onsubmit="salvarDespesa(event)" class="p-5 space-y-4">
+      <div><label class="text-xs text-gray-500 font-bold mb-1 block uppercase">Categoria</label><select id="d-categoria" class="input-field text-sm" required><option value="">Selecione...</option></select></div>
+      <div><label class="text-xs text-gray-500 font-bold mb-1 block uppercase">Descrição</label><input type="text" id="d-desc" class="input-field text-sm" placeholder="Ex: Conta de Luz" required></div>
+      <div><label class="text-xs text-gray-500 font-bold mb-1 block uppercase">Valor (R$)</label><input type="number" step="0.01" id="d-valor" class="input-field text-sm" placeholder="0,00" required></div>
+      <div><label class="text-xs text-gray-500 font-bold mb-1 block uppercase">Data do Pagamento</label><input type="date" id="d-data" class="input-field text-sm" required></div>
+      <div class="flex gap-3 pt-2">
+        <button type="button" onclick="closeModal('modalNovaDespesa')" class="btn-secondary flex-1">Cancelar</button>
+        <button type="submit" id="btnSalvarDespesa" class="btn-primary flex-1 bg-red-600 hover:bg-red-700">Salvar Saída</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Alterar Despesa -->
+<div class="modal-overlay" id="modalAlterarDespesa">
+  <div class="card w-full max-w-md m-4 p-0">
+    <div class="modal-header bg-orange-500 text-white p-4 flex items-center justify-between rounded-t-xl">
+      <h3 class="font-bold flex items-center gap-2"><i class="fas fa-pen"></i> Alterar Despesa</h3>
+      <button onclick="closeModal('modalAlterarDespesa')" class="text-white hover:opacity-70"><i class="fas fa-times"></i></button>
+    </div>
+    <form onsubmit="salvarAlteracaoDespesa(event)" class="p-5 space-y-4">
+      <input type="hidden" id="alt-d-id">
+      <div><label class="text-xs text-gray-500 font-bold mb-1 block uppercase">Categoria</label><select id="alt-d-categoria" class="input-field text-sm" required><option value="">Selecione...</option></select></div>
+      <div><label class="text-xs text-gray-500 font-bold mb-1 block uppercase">Descrição</label><input type="text" id="alt-d-desc" class="input-field text-sm" required></div>
+      <div><label class="text-xs text-gray-500 font-bold mb-1 block uppercase">Valor (R$)</label><input type="number" step="0.01" id="alt-d-valor" class="input-field text-sm" required></div>
+      <div><label class="text-xs text-gray-500 font-bold mb-1 block uppercase">Data</label><input type="date" id="alt-d-data" class="input-field text-sm" required></div>
+      <div class="flex gap-3 pt-2">
+        <button type="button" onclick="closeModal('modalAlterarDespesa')" class="btn-secondary flex-1">Cancelar</button>
+        <button type="submit" id="btnSalvarAltDespesa" class="btn-primary flex-1 bg-orange-500 hover:bg-orange-600">Salvar Alterações</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Confirmar Exclusão -->
+<div class="modal-overlay" id="modalConfirmarExclusao">
+  <div class="card w-full max-w-sm m-4 p-6 text-center">
+    <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="fas fa-exclamation-triangle text-2xl"></i></div>
+    <h3 class="text-lg font-bold text-gray-800 mb-2">Confirmar Exclusão?</h3>
+    <p class="text-sm text-gray-500 mb-6" id="msgConfirmarExclusao">Esta ação não poderá ser desfeita.</p>
+    <div class="flex gap-3">
+      <button onclick="closeModal('modalConfirmarExclusao')" class="btn-secondary flex-1">Cancelar</button>
+      <button id="btnConfirmarExclusaoOk" class="btn-danger flex-1">Sim, Excluir</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- fim #appRoot -->
+
+<script src="script.js"></script>
+</body>
+</html>
