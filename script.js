@@ -1523,7 +1523,8 @@ function getSegundoDomingoDoMes(mk){
       DB.cultos   = cultos.map(normalizarCulto);
       DB.entradas = entradas.map(normalizarEntrada);
       DB.saveLocal();
-      document.getElementById('ultimaSyncLabel').textContent = new Date().toLocaleTimeString('pt-BR');
+     const elSync = document.getElementById('ultimaSyncLabel');
+     if (elSync) elSync.textContent = new Date().toLocaleTimeString('pt-BR');
       setSyncStatus('synced');
     } catch(err){
       console.error('Erro na sync:', err);
